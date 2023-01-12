@@ -79,7 +79,7 @@ pub trait GasMeter {
         &mut self,
         module_id: &ModuleId,
         func_name: &str,
-        args: impl ExactSizeIterator<Item = impl ValueView>,
+        args: impl ExactSizeIterator<Item = impl ValueView> + Clone,
         num_locals: NumArgs,
     ) -> PartialVMResult<()>;
 
@@ -87,8 +87,8 @@ pub trait GasMeter {
         &mut self,
         module_id: &ModuleId,
         func_name: &str,
-        ty_args: impl ExactSizeIterator<Item = impl TypeView>,
-        args: impl ExactSizeIterator<Item = impl ValueView>,
+        ty_args: impl ExactSizeIterator<Item = impl TypeView> + Clone,
+        args: impl ExactSizeIterator<Item = impl ValueView> + Clone,
         num_locals: NumArgs,
     ) -> PartialVMResult<()>;
 
@@ -106,13 +106,13 @@ pub trait GasMeter {
     fn charge_pack(
         &mut self,
         is_generic: bool,
-        args: impl ExactSizeIterator<Item = impl ValueView>,
+        args: impl ExactSizeIterator<Item = impl ValueView> + Clone,
     ) -> PartialVMResult<()>;
 
     fn charge_unpack(
         &mut self,
         is_generic: bool,
-        args: impl ExactSizeIterator<Item = impl ValueView>,
+        args: impl ExactSizeIterator<Item = impl ValueView> + Clone,
     ) -> PartialVMResult<()>;
 
     fn charge_read_ref(&mut self, val: impl ValueView) -> PartialVMResult<()>;
@@ -161,7 +161,7 @@ pub trait GasMeter {
     fn charge_vec_pack<'a>(
         &mut self,
         ty: impl TypeView + 'a,
-        args: impl ExactSizeIterator<Item = impl ValueView>,
+        args: impl ExactSizeIterator<Item = impl ValueView> + Clone,
     ) -> PartialVMResult<()>;
 
     fn charge_vec_len(&mut self, ty: impl TypeView) -> PartialVMResult<()>;
@@ -190,7 +190,7 @@ pub trait GasMeter {
         &mut self,
         ty: impl TypeView,
         expect_num_elements: NumArgs,
-        elems: impl ExactSizeIterator<Item = impl ValueView>,
+        elems: impl ExactSizeIterator<Item = impl ValueView> + Clone,
     ) -> PartialVMResult<()>;
 
     // TODO(Gas): Expose the two elements
@@ -217,18 +217,18 @@ pub trait GasMeter {
     fn charge_native_function(
         &mut self,
         amount: InternalGas,
-        ret_vals: Option<impl ExactSizeIterator<Item = impl ValueView>>,
+        ret_vals: Option<impl ExactSizeIterator<Item = impl ValueView> + Clone>,
     ) -> PartialVMResult<()>;
 
     fn charge_native_function_before_execution(
         &mut self,
-        ty_args: impl ExactSizeIterator<Item = impl TypeView>,
-        args: impl ExactSizeIterator<Item = impl ValueView>,
+        ty_args: impl ExactSizeIterator<Item = impl TypeView> + Clone,
+        args: impl ExactSizeIterator<Item = impl ValueView> + Clone,
     ) -> PartialVMResult<()>;
 
     fn charge_drop_frame(
         &mut self,
-        locals: impl Iterator<Item = impl ValueView>,
+        locals: impl Iterator<Item = impl ValueView> + Clone,
     ) -> PartialVMResult<()>;
 }
 
