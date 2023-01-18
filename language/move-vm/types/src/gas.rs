@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::views::{TypeView, ValueView};
-use move_binary_format::errors::PartialVMResult;
+use move_binary_format::{errors::PartialVMResult, file_format::CodeOffset};
 use move_core_types::{
     gas_algebra::{InternalGas, NumArgs, NumBytes},
     language_storage::ModuleId,
@@ -13,10 +13,6 @@ use move_core_types::{
 pub enum SimpleInstruction {
     Nop,
     Ret,
-
-    BrTrue,
-    BrFalse,
-    Branch,
 
     LdU8,
     LdU64,
@@ -72,6 +68,12 @@ pub enum SimpleInstruction {
 pub trait GasMeter {
     /// Charge an instruction and fail if not enough gas units are left.
     fn charge_simple_instr(&mut self, instr: SimpleInstruction) -> PartialVMResult<()>;
+
+    fn charge_br_true(&mut self, target_offset: Option<CodeOffset>) -> PartialVMResult<()>;
+
+    fn charge_br_false(&mut self, target_offset: Option<CodeOffset>) -> PartialVMResult<()>;
+
+    fn charge_branch(&mut self, target_offset: CodeOffset) -> PartialVMResult<()>;
 
     fn charge_pop(&mut self, popped_val: impl ValueView) -> PartialVMResult<()>;
 
@@ -238,6 +240,18 @@ pub struct UnmeteredGasMeter;
 
 impl GasMeter for UnmeteredGasMeter {
     fn charge_simple_instr(&mut self, _instr: SimpleInstruction) -> PartialVMResult<()> {
+        Ok(())
+    }
+
+    fn charge_br_false(&mut self, _target_offset: Option<CodeOffset>) -> PartialVMResult<()> {
+        Ok(())
+    }
+
+    fn charge_br_true(&mut self, _target_offset: Option<CodeOffset>) -> PartialVMResult<()> {
+        Ok(())
+    }
+
+    fn charge_branch(&mut self, _target_offset: CodeOffset) -> PartialVMResult<()> {
         Ok(())
     }
 
