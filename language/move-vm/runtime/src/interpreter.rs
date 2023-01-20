@@ -503,6 +503,7 @@ impl Interpreter {
 
     /// Loads a resource from the data store and return the number of bytes read from the storage.
     fn load_resource<'b>(
+        loader: &Loader,
         gas_meter: &mut impl GasMeter,
         data_store: &'b mut impl DataStore,
         addr: AccountAddress,
@@ -524,7 +525,7 @@ impl Interpreter {
                         }
                         None => None,
                     };
-                    gas_meter.charge_load_resource(opt)?;
+                    gas_meter.charge_load_resource(addr, TypeWithLoader { ty, loader }, opt)?;
                 }
                 Ok(gv)
             }
@@ -549,7 +550,7 @@ impl Interpreter {
         addr: AccountAddress,
         ty: &Type,
     ) -> PartialVMResult<()> {
-        let res = Self::load_resource(gas_meter, data_store, addr, ty)?.borrow_global();
+        let res = Self::load_resource(loader, gas_meter, data_store, addr, ty)?.borrow_global();
         gas_meter.charge_borrow_global(
             is_mut,
             is_generic,
@@ -570,7 +571,7 @@ impl Interpreter {
         addr: AccountAddress,
         ty: &Type,
     ) -> PartialVMResult<()> {
-        let gv = Self::load_resource(gas_meter, data_store, addr, ty)?;
+        let gv = Self::load_resource(loader, gas_meter, data_store, addr, ty)?;
         let exists = gv.exists()?;
         gas_meter.charge_exists(is_generic, TypeWithLoader { ty, loader }, exists)?;
         self.operand_stack.push(Value::bool(exists))?;
@@ -587,21 +588,22 @@ impl Interpreter {
         addr: AccountAddress,
         ty: &Type,
     ) -> PartialVMResult<()> {
-        let resource = match Self::load_resource(gas_meter, data_store, addr, ty)?.move_from() {
-            Ok(resource) => {
-                gas_meter.charge_move_from(
-                    is_generic,
-                    TypeWithLoader { ty, loader },
-                    Some(&resource),
-                )?;
-                resource
-            }
-            Err(err) => {
-                let val: Option<&Value> = None;
-                gas_meter.charge_move_from(is_generic, TypeWithLoader { ty, loader }, val)?;
-                return Err(err);
-            }
-        };
+        let resource =
+            match Self::load_resource(loader, gas_meter, data_store, addr, ty)?.move_from() {
+                Ok(resource) => {
+                    gas_meter.charge_move_from(
+                        is_generic,
+                        TypeWithLoader { ty, loader },
+                        Some(&resource),
+                    )?;
+                    resource
+                }
+                Err(err) => {
+                    let val: Option<&Value> = None;
+                    gas_meter.charge_move_from(is_generic, TypeWithLoader { ty, loader }, val)?;
+                    return Err(err);
+                }
+            };
         self.operand_stack.push(resource)?;
         Ok(())
     }
@@ -617,7 +619,7 @@ impl Interpreter {
         ty: &Type,
         resource: Value,
     ) -> PartialVMResult<()> {
-        let gv = Self::load_resource(gas_meter, data_store, addr, ty)?;
+        let gv = Self::load_resource(loader, gas_meter, data_store, addr, ty)?;
         // NOTE(Gas): To maintain backward compatibility, we need to charge gas after attempting
         //            the move_to operation.
         match gv.move_to(resource) {
