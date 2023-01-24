@@ -270,6 +270,8 @@ impl Interpreter {
         func: Arc<Function>,
         ty_args: Vec<Type>,
     ) -> PartialVMResult<Frame> {
+        println!("new frame {:?}::{}", func.module_id(), func.name());
+        println!("{:#?}", func.code());
         let mut locals = Locals::new(func.local_count());
         let arg_count = func.arg_count();
         let is_generic = !ty_args.is_empty();
